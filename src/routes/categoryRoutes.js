@@ -8,11 +8,12 @@ import {
 } from "../controllers/categoryController.js";
 
 import { protect, adminOnly } from "../middlewares/authMiddleware.js";
+import upload from '../middlewares/upload.js';
 
 const router = express.Router();
 
 // Create category - admin only
-router.post("/", protect, adminOnly, createCategory);
+router.post("/", upload.single('image'), protect, adminOnly, createCategory);
 
 // Get all categories
 router.get("/", getCategories);
@@ -21,7 +22,7 @@ router.get("/", getCategories);
 router.get("/:id", getCategoryById);
 
 // Update category - admin only
-router.put("/:id", protect, adminOnly, updateCategory);
+router.put("/:id", upload.single('image'), protect, adminOnly, updateCategory);
 
 // Delete category - admin only
 router.delete("/:id", protect, adminOnly, deleteCategory);

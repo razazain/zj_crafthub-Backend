@@ -4,6 +4,8 @@ import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoute.js"; 
 import categoryRoutes from "./routes/categoryRoutes.js";
+import wishlistRoutes from "./routes/wishlistRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 
 const app = express();
 
@@ -15,6 +17,9 @@ app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/cart", cartRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Welcome to ZJ Craft Hub API");

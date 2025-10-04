@@ -7,11 +7,17 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["admin", "customer"], default: "customer" },
+
+    // ✅ Profile Image
+    profileImage: {
+      url: { type: String, default: "" },     // Cloudinary URL
+      alt: { type: String, default: "Profile Picture" },
+    },
   },
   { timestamps: true }
 );
 
-// Password hash before saving
+// ✅ Password hash before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -19,7 +25,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Compare passwords
+// ✅ Compare passwords
 userSchema.methods.matchPassword = async function (entered) {
   return await bcrypt.compare(entered, this.password);
 };

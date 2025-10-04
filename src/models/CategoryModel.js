@@ -9,6 +9,13 @@ const categorySchema = new mongoose.Schema(
       trim: true,
     },
 
+    images: [
+      {
+        url: { type: String, required: true }, // can store Cloudinary or local URL
+        alt: { type: String, default: "" },
+      },
+    ],
+
     slug: {
       type: String,
       unique: true,

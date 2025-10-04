@@ -5,7 +5,7 @@ export const createCategory = async (req, res) => {
   try {
     const { name, description, status } = req.body;
 
-    // Check if category already exists
+    // ✅ Check if category already exists
     const existingCategory = await Category.findOne({ name: name.trim() });
     if (existingCategory) {
       return res.status(400).json({
@@ -14,10 +14,16 @@ export const createCategory = async (req, res) => {
       });
     }
 
+    // ✅ Handle single image (from multer + Cloudinary)
+    const image = req.file
+      ? [{ url: req.file.path, alt: name }]
+      : [];
+
     const category = await Category.create({
       name,
       description,
       status,
+      images: image,   // store single image as array
     });
 
     res.status(201).json({
@@ -26,7 +32,7 @@ export const createCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    console.error("Error creating category:", error);
+    console.error("Create Category Error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to create category",
@@ -89,14 +95,9 @@ export const getCategoryById = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = { ...req.body };
+    const { name, description, status } = req.body;
 
-    // Update category
-    const category = await Category.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    });
-
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({
         success: false,
@@ -104,13 +105,27 @@ export const updateCategory = async (req, res) => {
       });
     }
 
+    // ✅ Update fields
+    if (name) category.name = name;
+    if (description) category.description = description;
+    if (status) category.status = status;
+
+    // ✅ If a new image is uploaded, replace old one
+    if (req.file) {
+      category.images = [
+        { url: req.file.path, alt: name || category.name }
+      ];
+    }
+
+    await category.save();
+
     res.status(200).json({
       success: true,
       message: "Category updated successfully",
       category,
     });
   } catch (error) {
-    console.error("Error updating category:", error);
+    console.error("Update Category Error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update category",
@@ -146,3 +161,5 @@ export const deleteCategory = async (req, res) => {
     });
   }
 };
+
+
