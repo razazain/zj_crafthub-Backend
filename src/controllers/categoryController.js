@@ -1,5 +1,6 @@
 import Category from "../models/CategoryModel.js";
 
+
 // ✅ Create Category
 export const createCategory = async (req, res) => {
   try {
