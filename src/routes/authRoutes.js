@@ -10,9 +10,10 @@ import {
   changePassword,
   changePasswordByAdmin,
   changeUserRole,
-} from '../controllers/AuthController.js';
+} from '../controllers/authController.js';
 import upload from '../middlewares/upload.js';
 import { protect, adminOnly } from "../middlewares/authMiddleware.js";
+
 
 
 const router = express.Router();
