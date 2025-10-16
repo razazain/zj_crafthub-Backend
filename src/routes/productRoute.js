@@ -20,7 +20,8 @@ router.post(
   createProduct
 );
 // Get all products
-router.get('/', getProducts);
+router.get('/category/:categoryId', getProducts);
+router.get('/:filter', getProducts);
 
 // Get single product by ID or slug
 router.get('/:id', getProductById);

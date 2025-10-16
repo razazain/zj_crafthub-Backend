@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Product from '../models/ProductModel.js';
 import Category from '../models/CategoryModel.js';
 
@@ -65,8 +66,21 @@ export const createProduct = async (req, res) => {
 // =============================================
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find()
-      .populate('category', 'name slug') // ✅ Populate category fields
+    const { filter, categoryId } = req.params;
+    let query = {};
+
+    // If bestseller filter
+    if (filter === 'bestseller') {
+      query.isBestSeller = true;
+    }
+
+    // ✅ Convert categoryId to ObjectId
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+      query.category = new mongoose.Types.ObjectId(categoryId);
+    }
+
+    const products = await Product.find(query)
+      .populate('category', 'name slug')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -83,6 +97,8 @@ export const getProducts = async (req, res) => {
     });
   }
 };
+
+
 
 // =============================================
 // ✅ Get Single Product by ID or Slug
