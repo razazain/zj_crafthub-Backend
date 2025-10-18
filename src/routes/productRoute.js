@@ -1,47 +1,41 @@
-import express from 'express';
-import upload from '../middlewares/upload.js';
+import express from "express";
+import upload from "../middlewares/upload.js";
 import { protect, adminOnly } from "../middlewares/authMiddleware.js";
 import {
   createProduct,
   getProducts,
+  getProductsByCategory,
   getProductById,
   updateProduct,
   deleteProduct,
-} from '../controllers/productController.js';
+} from "../controllers/productController.js";
 
 const router = express.Router();
 
-// Admin-only route for product creation
+// 🧩 Admin-only: Create new product
 router.post(
   "/",
-  protect,               // must be logged in
-  adminOnly,             // must be admin
-  upload.array("images", 5), // handle up to 5 images
+  protect,
+  adminOnly,
+  upload.array("images", 5),
   createProduct
 );
-// Get all products
-router.get('/category/:categoryId', getProducts);
-router.get('/:filter', getProducts);
 
-// Get single product by ID or slug
-router.get('/:id', getProductById);
+// 🛍 Public routes
+router.get("/", getProducts);                      // Get all products
+router.get("/category/:categoryId", getProductsByCategory); // Get products by category ID
+router.get("/filter/:filter", getProducts);        // Get products by filter (bestseller, featured, etc.)
+router.get("/:id", getProductById);                // Get single product by ID or slug
 
-// Update product 
+// ✏️ Admin routes (update/delete)
 router.put(
-  '/:id',
-  protect,               
-  adminOnly,            
-  upload.array('images', 5),
+  "/:id",
+  protect,
+  adminOnly,
+  upload.array("images", 5),
   updateProduct
 );
 
-// Delete product (Admin only)
-router.delete(
-  '/:id',
-  protect,               
-  adminOnly,             
-  deleteProduct
-);
-
+router.delete("/:id", protect, adminOnly, deleteProduct);
 
 export default router;

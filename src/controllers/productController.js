@@ -66,21 +66,16 @@ export const createProduct = async (req, res) => {
 // =============================================
 export const getProducts = async (req, res) => {
   try {
-    const { filter, categoryId } = req.params;
+    const { filter } = req.params;
     let query = {};
 
-    // If bestseller filter
-    if (filter === 'bestseller') {
-      query.isBestSeller = true;
-    }
-
-    // ✅ Convert categoryId to ObjectId
-    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
-      query.category = new mongoose.Types.ObjectId(categoryId);
-    }
+    // Apply optional filters
+    if (filter === "bestseller") query.isBestSeller = true;
+    if (filter === "featured") query.isFeatured = true;
+    if (filter === "new") query.isNewArrival = true;
 
     const products = await Product.find(query)
-      .populate('category', 'name slug')
+      .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -89,10 +84,44 @@ export const getProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.error('Get Products Error:', error);
+    console.error("Get Products Error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch products',
+      message: "Failed to fetch products",
+      error: error.message,
+    });
+  }
+};
+
+// 🏷️ Get products by category ID
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    console.log("Fetching products for category ID:", categoryId);
+
+    // Try both string and ObjectId matches
+    const products = await Product.find({
+      $or: [
+        { category: categoryId },
+        { category: new mongoose.Types.ObjectId(categoryId) }
+      ]
+    })
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 });
+
+    console.log(`Found ${products.length} products for category ID:`, categoryId);
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("Get Products by Category Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products by category",
       error: error.message,
     });
   }
