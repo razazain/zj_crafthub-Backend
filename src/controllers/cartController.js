@@ -55,10 +55,21 @@ export const getCart = async (req, res) => {
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     if (!cart) {
-      return res.status(200).json({ success: true, cart: { items: [] } });
+      return res.status(200).json({
+        success: true,
+        cart: { items: [], count: 0 },
+      });
     }
 
-    res.status(200).json({ success: true, cart });
+    const count = cart.items.length;
+
+    res.status(200).json({
+      success: true,
+      cart: {
+        ...cart._doc, // spread all existing cart data
+        count,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
