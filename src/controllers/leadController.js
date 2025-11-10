@@ -1,4 +1,4 @@
-import Lead from "../models/leadModel.js";
+import Lead from "../models/LeadModel.js";
 import Contact from "../models/ContactModel.js";
 
 // contact us
