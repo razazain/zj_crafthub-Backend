@@ -7,9 +7,9 @@ import { generateToken } from "../utils/jwt.js";
 // ======================
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phoneNumber } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phoneNumber) {
       return res.status(400).json({ message: "Please provide all fields" });
     }
 
@@ -28,6 +28,7 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password,
+      phoneNumber,
       profileImage,
     });
 
@@ -37,6 +38,7 @@ export const registerUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         profileImage: user.profileImage,
       },
     });
@@ -109,7 +111,7 @@ export const getUserById = async (req, res) => {
 // ======================
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, phoneNumber, password, role } = req.body;
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -117,6 +119,7 @@ export const updateUser = async (req, res) => {
     // ✅ Update fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
     if (role) user.role = role;
     if (password) user.password = password; // will be hashed by pre('save')
 
@@ -133,6 +136,7 @@ export const updateUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         role: user.role,
         profileImage: user.profileImage,
       },
