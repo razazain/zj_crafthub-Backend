@@ -10,6 +10,9 @@ import {
   changePassword,
   changePasswordByAdmin,
   changeUserRole,
+  resendOtp,
+  verifyOtp
+
 } from '../controllers/authController.js';
 import upload from '../middlewares/upload.js';
 import { protect, adminOnly } from "../middlewares/authMiddleware.js";
@@ -20,6 +23,8 @@ import { protect, adminOnly } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 router.post("/register", upload.single("profileImage"),  registerUser);
+router.post("/verify-otp", verifyOtp);
+router.post("/resend-otp", resendOtp);
 router.post("/login", loginUser);
 
 

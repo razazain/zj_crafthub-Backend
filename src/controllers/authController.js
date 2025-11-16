@@ -1,4 +1,7 @@
 import User from "../models/UserModel.js";
+import Otp from "../models/OtpModel.js";
+import crypto from "crypto";
+import { sendMail } from "../utils/mailer.js";
 import { generateToken } from "../utils/jwt.js";
 
 // ======================
@@ -32,6 +35,38 @@ export const registerUser = async (req, res) => {
       profileImage,
     });
 
+    const otpCode = Math.floor(100000 + Math.random() * 900000);
+
+    await Otp.create({
+      email,
+      otp: otpCode,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 min expiry
+    });
+
+    try {
+      await sendMail({
+        to: email,
+        subject: "🔑 Your ZJ CRAFTHUB Verification Code",
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color:#d0a19b;">Hello ${name},</h2>
+            <p>Thank you for registering at <strong>ZJ CRAFTHUB</strong>!</p>
+            <p>Your one-time verification code is:</p>
+            <h1 style="letter-spacing: 5px; color:#d0a19b;">${otpCode}</h1>
+            <p>This code is valid for <b>5 minutes</b>.</p>
+            <p style="margin-top:20px; font-size:14px; color:#555;">
+              If you did not request this code, please ignore this email.
+            </p>      
+            <p style="margin-top:20px;">— ❤️ The ZJ CRAFTHUB Team</p>
+          </div>
+        `,
+      });
+    } catch (error) {
+      await User.findByIdAndDelete(user._id);
+      await Otp.deleteMany({ email });
+      return res.status(500).json({ message: "Failed to send OTP email" });
+    }
+
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -44,6 +79,114 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Validate input
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    // Find OTP record
+    const record = await Otp.findOne({ email }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(400).json({ message: "OTP not found or expired" });
+    }
+
+    // Match OTP
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // Check expiration
+    if (record.expiresAt < new Date()) {
+      await Otp.deleteMany({ email }); // cleanup expired OTPs
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // Update user verification status
+    await User.updateOne({ email }, { isVerified: true });
+
+    // Delete all OTPs for this user
+    await Otp.deleteMany({ email });
+
+    return res.json({
+      message: "Email verified successfully",
+      success: true,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // If already verified -> no need for OTP
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    // Check if user is requesting OTP too frequently (1 minute cooldown)
+    const lastOtp = await Otp.findOne({ email }).sort({ createdAt: -1 });
+
+    if (lastOtp) {
+      const secondsSinceLastOtp = (Date.now() - lastOtp.createdAt) / 1000;
+
+      if (secondsSinceLastOtp < 60) {
+        return res.status(429).json({
+          message: `You must wait ${Math.ceil(60 - secondsSinceLastOtp)} seconds before requesting another OTP.`,
+        });
+      }
+    }
+
+    // Delete existing OTPs
+    await Otp.deleteMany({ email });
+
+    // Generate new OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000);
+
+    await Otp.create({
+      email,
+      otp: otpCode,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min expiry
+    });
+
+    // Send email
+    await sendMail({
+      to: email,
+      subject: "Your New Verification Code",
+      html: `
+        <h2>Your OTP Code</h2>
+        <h1>${otpCode}</h1>
+        <p>This OTP is valid for <b>5 minutes</b>.</p>
+      `,
+    });
+
+    return res.json({
+      message: "OTP resent successfully.",
+      email,
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -60,6 +203,11 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+
+    if (!user.isVerified) {
+      return res.status(400).json({ message: "Please verify your email first" });
+    }
+
     const token = generateToken(user._id);
 
     res.json({
@@ -70,6 +218,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        verified: user.isVerified,
         profileImage: user.profileImage,
       },
     });
