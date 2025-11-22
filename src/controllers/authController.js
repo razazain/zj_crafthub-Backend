@@ -46,7 +46,7 @@ export const registerUser = async (req, res) => {
     try {
       await sendMail({
         to: email,
-        subject: "🔑 Your ZJ CRAFTHUB Verification Code",
+        subject: "Your ZJ CRAFTHUB Verification Code",
         html: `
           <div style="font-family: Arial, sans-serif; color: #333;">
             <h2 style="color:#d0a19b;">Hello ${name},</h2>
@@ -189,6 +189,92 @@ export const resendOtp = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Security: Do not reveal user existence
+      return res.json({ message: "If this email exists, OTP has been sent." });
+    }
+
+    // Delete previous OTPs
+    await Otp.deleteMany({ email });
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000);
+
+    await Otp.create({
+      email,
+      otp: otpCode,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    await sendMail({
+      to: email,
+      subject: "Password Reset OTP - ZJ CRAFTHUB",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Your OTP for resetting password is:</p>
+        <h1>${otpCode}</h1>
+        <p>Valid for 5 minutes</p>
+      `,
+    });
+
+    res.json({ message: "OTP sent to email for password reset" });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const record = await Otp.findOne({ email }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(400).json({ message: "OTP not found or expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (record.expiresAt < new Date()) {
+      await Otp.deleteMany({ email });
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = newPassword; // auto hashed by pre-save
+    await user.save();
+
+    await Otp.deleteMany({ email });
+
+    res.json({
+      success: true,
+      message: "Password reset successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // ======================
 // @desc   Login user

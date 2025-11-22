@@ -11,7 +11,9 @@ import {
   changePasswordByAdmin,
   changeUserRole,
   resendOtp,
-  verifyOtp
+  verifyOtp,
+  forgotPassword, 
+  resetPassword
 
 } from '../controllers/authController.js';
 import upload from '../middlewares/upload.js';
@@ -25,6 +27,8 @@ const router = express.Router();
 router.post("/register", upload.single("profileImage"),  registerUser);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 router.post("/login", loginUser);
 
 
