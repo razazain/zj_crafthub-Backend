@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+
+
+
+
 const serviceAccount = {
   type: process.env.FIREBASE_TYPE,
   project_id: process.env.FIREBASE_PROJECT_ID,
@@ -23,4 +27,4 @@ if (!admin.apps.length) {
   });
 }
 
-export const firebaseAdmin = admin;
+export const firebaseAdmin = admin; 
