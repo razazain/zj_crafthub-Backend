@@ -11,6 +11,14 @@ const {
   EMAIL_FROM,
 } = process.env;
 
+console.log("📧 Mailer Config:",  {
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_SECURE,
+  SMTP_USER,
+  EMAIL_FROM,
+});
+
 // ✅ Create transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
