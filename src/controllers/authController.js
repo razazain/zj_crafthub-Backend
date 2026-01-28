@@ -140,9 +140,9 @@ export const resendOtp = async (req, res) => {
     }
 
     // If already verified -> no need for OTP
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Email already verified" });
-    }
+    // if (user.isVerified) {
+    //   return res.status(400).json({ message: "Email already verified" });
+    // }
 
     // Check if user is requesting OTP too frequently (1 minute cooldown)
     const lastOtp = await Otp.findOne({ email }).sort({ createdAt: -1 });
