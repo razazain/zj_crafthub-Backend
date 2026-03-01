@@ -1,6 +1,7 @@
 // src/controllers/cartController.js
 import Cart from "../models/CartModel.js";
 import Product from "../models/ProductModel.js";
+import User from "../models/UserModel.js";
 
 /**
  * Add or update product in cart
@@ -142,18 +143,85 @@ export const clearCart = async (req, res) => {
   }
 };
 
+// admin route to get all carts with pagination and search
 export const getAllCarts = async (req, res) => {
   try {
-    const carts = await Cart.find()
-      .populate("user", "userName email role") // show basic user info
-      .populate("items.product", "name price images"); // show product info
+    const page = Number(req.query.page) || 1;  
+    const limit = Number(req.query.limit) || 10; 
+    const skip = (page - 1) * limit;
+
+    const search = req.query.search || "";   // 🔍 search param
+
+    let cartFilter = {};
+
+    // ================================
+    // 🔍 SEARCH LOGIC
+    // ================================
+    if (search) {
+      const regex = new RegExp(search, "i"); // case-insensitive
+
+      // 🔍 Search in Users
+      const users = await User.find({
+        $or: [
+          { name: regex },
+          { email: regex },
+          { phoneNumber: regex },
+        ],
+      }).select("_id");
+
+      const userIds = users.map((u) => u._id);
+
+      // 🔍 Search in Products
+      const products = await Product.find({
+        $or: [
+          { name: regex },
+          { description: regex },
+          { tags: regex },
+        ],
+      }).select("_id");
+
+      const productIds = products.map((p) => p._id);
+
+      // 🔍 Apply filter on Cart
+      cartFilter = {
+        $or: [
+          { user: { $in: userIds } },
+          { "items.product": { $in: productIds } },
+        ],
+      };
+    }
+
+    // ================================
+    // 📊 TOTAL COUNT (after filter)
+    // ================================
+    const totalCarts = await Cart.countDocuments(cartFilter);
+
+    // ================================
+    // 📦 FETCH CARTS
+    // ================================
+    const carts = await Cart.find(cartFilter)
+      .populate("user", "name email phoneNumber role profileImage")
+      .populate("items.product", "name price images status")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      totalCarts: carts.length,
+      totalCarts,
+      pagination: {
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil(totalCarts / limit),
+        hasNextPage: page < Math.ceil(totalCarts / limit),
+        hasPrevPage: page > 1,
+      },
       carts,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
-};  
+};

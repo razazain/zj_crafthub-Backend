@@ -7,16 +7,16 @@ import Category from '../models/CategoryModel.js';
 // =============================================
 export const createProduct = async (req, res) => {
   try {
-    const { 
-      name, 
-      description, 
-      price, 
-      category, 
-      tags, 
-      isBestSeller, 
-      isFeatured, 
-      isNewArrival, 
-      status 
+    const {
+      name,
+      description,
+      price,
+      category,
+      tags,
+      isBestSeller,
+      isFeatured,
+      isNewArrival,
+      status
     } = req.body;
 
     // ✅ Validate category ID
@@ -35,7 +35,13 @@ export const createProduct = async (req, res) => {
     })) || [];
 
     // ✅ Handle tags
-    const formattedTags = tags ? tags.split(',').map(tag => tag.trim()) : [];
+    let formattedTags = [];
+
+    if (Array.isArray(tags)) {
+      formattedTags = tags.map(tag => tag.trim());
+    } else if (typeof tags === 'string') {
+      formattedTags = tags.split(',').map(tag => tag.trim());
+    }
 
     const product = await Product.create({
       name,
@@ -67,20 +73,41 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   try {
     const { filter } = req.params;
+    const { status } = req.query;
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     let query = {};
 
-    // Apply optional filters
+
+    if (status) {
+      query.status = status; // active OR inactive
+    }
+
+
+    // Optional filters
     if (filter === "bestseller") query.isBestSeller = true;
     if (filter === "featured") query.isFeatured = true;
     if (filter === "new") query.isNewArrival = true;
 
+    const total = await Product.countDocuments(query);
+
     const products = await Product.find(query)
       .populate("category", "name slug")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
-      count: products.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
       products,
     });
   } catch (error) {
@@ -88,7 +115,6 @@ export const getProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch products",
-      error: error.message,
     });
   }
 };
@@ -97,24 +123,39 @@ export const getProducts = async (req, res) => {
 export const getProductsByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
+    const { status } = req.query;
 
-    console.log("Fetching products for category ID:", categoryId);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    // Try both string and ObjectId matches
-    const products = await Product.find({
-      $or: [
-        { category: categoryId },
-        { category: new mongoose.Types.ObjectId(categoryId) }
-      ]
-    })
+    let query = {};
+
+    query = {
+      category: categoryId,
+    };
+
+    if (status) {
+      query.status = status; // active OR inactive
+    }
+
+
+    const total = await Product.countDocuments(query);
+
+    const products = await Product.find(query)
       .populate("category", "name slug")
-      .sort({ createdAt: -1 });
-
-    console.log(`Found ${products.length} products for category ID:`, categoryId);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
-      count: products.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
       products,
     });
   } catch (error) {
@@ -122,7 +163,6 @@ export const getProductsByCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch products by category",
-      error: error.message,
     });
   }
 };
@@ -133,25 +173,21 @@ export const getProductsByCategory = async (req, res) => {
 // ✅ Get Single Product by ID or Slug
 // =============================================
 export const getProductById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
+  try { 
+    const { id } = req.params; 
     const product = await Product.findById(id).populate('category', 'name slug')
-      || await Product.findOne({ slug: id }).populate('category', 'name slug');
-
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+     || await Product.findOne({ slug: id }).populate('category', 'name slug');
+      if (!product) { 
+        return res.status(404).json({ success: false, message: 'Product not found' }); 
+      } 
+      res.status(200).json({ 
+        success: true, product 
+      }); 
+    } catch (error) { 
+      console.error('Get Product Error:', error); 
+      res.status(500).json({ 
+      success: false, message: 'Failed to fetch product', error: error.message, }); 
     }
-
-    res.status(200).json({ success: true, product });
-  } catch (error) {
-    console.error('Get Product Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch product',
-      error: error.message,
-    });
-  }
 };
 
 // =============================================
@@ -175,7 +211,11 @@ export const updateProduct = async (req, res) => {
 
     // ✅ Handle tags
     if (updates.tags) {
-      updates.tags = updates.tags.split(',').map(tag => tag.trim());
+      if (Array.isArray(updates.tags)) {
+        updates.tags = updates.tags.map(tag => tag.trim());
+      } else if (typeof updates.tags === 'string') {
+        updates.tags = updates.tags.split(',').map(tag => tag.trim());
+      }
     }
 
     // ✅ Handle new images if uploaded

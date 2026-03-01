@@ -45,11 +45,32 @@ export const createCategory = async (req, res) => {
 // ✅ Get All Categories
 export const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
+    const { status, page = 1, limit = 10 } = req.query;
+
+    const filter = {};
+    if (status) {
+      filter.status = status; // active / inactive
+    }
+
+    const currentPage = Math.max(parseInt(page), 1);
+    const pageLimit = Math.max(parseInt(limit), 1);
+    const skip = (currentPage - 1) * pageLimit;
+
+    const [categories, total] = await Promise.all([
+      Category.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageLimit),
+      Category.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
       count: categories.length,
+      total,
+      page: currentPage,
+      totalPages: Math.ceil(total / pageLimit),
+      limit: pageLimit,
       categories,
     });
   } catch (error) {
