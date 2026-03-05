@@ -14,6 +14,15 @@ const cartItemSchema = new mongoose.Schema(
       default: 1,
       min: 1,
     },
+    status: {
+      type: String,
+      enum: ["added", "quantity_updated", "product_removed", "ordered"],
+      default: "added"
+    },
+    statusUpdatedAt: {
+      type: Date,
+      default: Date.now
+    }
   },
   { _id: false }
 );
@@ -27,6 +36,15 @@ const cartSchema = new mongoose.Schema(
       unique: true, // one cart per user
     },
     items: [cartItemSchema],
+    status: {
+      type: String,
+      enum: ["active", "cart_cleared", "ordered"],
+      default: "active"
+    },
+    statusUpdatedAt: {
+      type: Date,
+      default: Date.now
+    }
   },
   { timestamps: true }
 );
