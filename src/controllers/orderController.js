@@ -88,19 +88,32 @@ export const createOrder = async (req, res) => {
       },
     });
 
-    // ✅ remove ordered products from user's cart
+    // ✅ Update cart items status to "ordered" instead of removing them
     const orderedProductIds = parsedProducts.map((item) => item.product);
 
-    await Cart.updateOne(
-      { user: userId },
-      {
-        $pull: {
-          items: {
-            product: { $in: orderedProductIds },
-          },
-        },
+    const cart = await Cart.findOne({ user: userId });
+    
+    if (cart) {
+      // Update status of ordered items to "ordered"
+      cart.items.forEach(item => {
+        if (orderedProductIds.includes(item.product.toString())) {
+          item.status = "ordered";
+          item.statusUpdatedAt = new Date();
+        }
+      });
+      
+      // Check if all items are ordered, then update cart status
+      const allItemsOrdered = cart.items.every(
+        item => item.status === "ordered" || item.status === "product_removed"
+      );
+      
+      if (allItemsOrdered) {
+        cart.status = "ordered";
+        cart.statusUpdatedAt = new Date();
       }
-    );
+      
+      await cart.save();
+    }
 
     // ✅ Send order confirmation email
     try {
@@ -130,8 +143,8 @@ export const createOrder = async (req, res) => {
       <p>Hi <strong>${user.name || fullName}</strong>,</p>
       
       <p>
-        We’re excited to let you know that your order <strong>#${order.orderNumber}</strong> has been successfully received! 
-        Our team is now verifying your payment, and we’ll reach out with updates as soon as your order is confirmed.
+        We're excited to let you know that your order <strong>#${order.orderNumber}</strong> has been successfully received! 
+        Our team is now verifying your payment, and we'll reach out with updates as soon as your order is confirmed.
       </p>
 
       <h3 style="margin-top: 20px;">🛍️ Order Summary</h3>
@@ -162,7 +175,7 @@ export const createOrder = async (req, res) => {
 
       <p style="margin-top: 20px;">
         We truly appreciate your trust in <strong>ZJ CRAFTHUB</strong>. Our team is preparing your order with love and care.
-        You’ll receive another email once your package is shipped. 💌
+        You'll receive another email once your package is shipped. 💌
       </p>
 
       <p style="color: #d0a19b; font-weight: bold; margin-top: 30px;">
@@ -173,7 +186,7 @@ export const createOrder = async (req, res) => {
 
       await sendMail({
         to: user.email,
-        subject: `We’ve Received Your Order — #${order.orderNumber}`,
+        subject: `We've Received Your Order — #${order.orderNumber}`,
         html: htmlContent,
       });
     } catch (emailError) {
@@ -198,12 +211,36 @@ export const createOrder = async (req, res) => {
 // 📝 Get all orders (Admin)
 export const getOrders = async (req, res) => {
   try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalOrders = await Order.countDocuments();
+
     const orders = await Order.find()
       .populate("user", "name email phoneNumber role profileImage")
-      .populate("products.product", "name price images");
-    res.status(200).json({ success: true, orders });
+      .populate("products.product", "name price images")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      totalOrders,
+      pagination: {
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil(totalOrders / limit),
+        hasNextPage: page < Math.ceil(totalOrders / limit),
+        hasPrevPage: page > 1,
+      },
+      orders,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
