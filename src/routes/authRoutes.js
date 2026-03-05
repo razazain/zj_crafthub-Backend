@@ -14,10 +14,6 @@ import {
   verifyOtp,
   forgotPassword,
   resetPassword,
-  googleSignIn,
-  linkGoogleAccount,
-  unlinkGoogleAccount,
-  setPasswordForSocialUser
 
 } from '../controllers/authController.js';
 import upload from '../middlewares/upload.js';
@@ -28,11 +24,6 @@ import { protect, adminOnly } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Social Login Routes
-router.post("/google", googleSignIn);
-router.post("/link-google", protect, linkGoogleAccount);
-router.post("/unlink-google", protect, unlinkGoogleAccount);
-router.post("/set-password", protect, setPasswordForSocialUser);
 
 router.post("/register", upload.single("profileImage"), registerUser);
 router.post("/verify-otp", verifyOtp);
