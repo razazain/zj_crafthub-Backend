@@ -294,14 +294,6 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Check if user uses social login
-    if (user.authProvider !== 'local') {
-      return res.status(400).json({ 
-        message: `Please use ${user.authProvider} login`,
-        authProvider: user.authProvider
-      });
-    }
-
     if (!(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -322,7 +314,6 @@ export const loginUser = async (req, res) => {
         role: user.role,
         verified: user.isVerified,
         profileImage: user.profileImage,
-        authProvider: user.authProvider
       },
     });
   } catch (error) {

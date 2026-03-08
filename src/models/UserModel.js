@@ -10,15 +10,6 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     role: { type: String, enum: ["admin", "customer"], default: "customer" },
 
-    socialId: {
-    type: String,
-    sparse: true, // Allows multiple users with null value
-  },
-  authProvider: {
-    type: String,
-    enum: ['local', 'google', 'facebook', 'apple'],
-    default: 'local',
-  },
 
     // ✅ Profile Image
     profileImage: {
@@ -29,7 +20,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.index({ socialId: 1, authProvider: 1 }, { unique: true, sparse: true });
 
 // ✅ Password hash before saving
 userSchema.pre("save", async function (next) {
