@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminOnly } from '../middlewares/authMiddleware.js';
+import {protect, adminOnly } from '../middlewares/authMiddleware.js';
 import {
     subscribeEmail,
     getLeads,
@@ -10,15 +10,18 @@ import {
 
 const router = express.Router();
 
+
+
 // 🆕 Create lead
 router.post('/', subscribeEmail);
-// 📋 Get all leads (admin only)
-router.get('/', adminOnly, getLeads);
+
 
 
 router.post('/contact', createContact);
 // 📋 Get all contacts (admin only
-router.get('/contact', adminOnly, getContacts);
+router.get('/contact', protect, adminOnly,  getContacts);
+// 📋 Get all leads (admin only)
+router.get('/', protect, adminOnly, getLeads);
 
 export default router;
 
