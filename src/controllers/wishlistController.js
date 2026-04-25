@@ -67,17 +67,92 @@ export const removeFromWishlist = async (req, res) => {
   }
 };
 
-// ✅ (Optional) Get All Wishlists – Admin Only
+// ✅ Get All Wishlists – Admin Only
 export const getAllWishlists = async (req, res) => {
   try {
-    const allWishlists = await Wishlist.find()
-      .populate("user", "name email")
-      .populate("product", "name price");
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const search = req.query.search || "";
+
+    const skip = (page - 1) * limit;
+
+    const matchStage = search
+      ? {
+          $or: [
+            { "user.name": { $regex: search, $options: "i" } },
+            { "user.email": { $regex: search, $options: "i" } },
+            { "product.name": { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const wishlistData = await Wishlist.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+
+      {
+        $lookup: {
+          from: "products",
+          localField: "product",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+
+      { $match: matchStage },
+
+      {
+        $project: {
+          user: {
+            _id: "$user._id",
+            name: "$user.name",
+            email: "$user.email",
+            profileImage: "$user.profileImage",
+          },
+          product: {
+            _id: "$product._id",
+            name: "$product.name",
+            price: "$product.price",
+            images: "$product.images",
+          },
+          createdAt: 1,
+        },
+      },
+
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+
+    const wishlists = wishlistData[0].data;
+    const total = wishlistData[0].totalCount[0]
+      ? wishlistData[0].totalCount[0].count
+      : 0;
+
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       success: true,
-      count: allWishlists.length,
-      wishlists: allWishlists,
+      wishlists,
+      pagination: {
+        totalRecords: total,
+        currentPage: page,
+        totalPages,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
