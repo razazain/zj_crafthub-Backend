@@ -10,6 +10,7 @@ import wishlistRoutes from "./routes/wishlistRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes); 
 app.use("/api/leads", leadRoutes);
+app.use("/api/dashboard", dashboardRoutes); 
 
 
 
