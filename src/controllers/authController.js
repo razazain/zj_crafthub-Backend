@@ -50,18 +50,18 @@ export const registerUser = async (req, res) => {
     try {
       await sendMail({
         to: email,
-        subject: "Your ZJ CRAFTHUB Verification Code",
+        subject: "Your ZJ CRAFTSHUB Verification Code",
         html: `
           <div style="font-family: Arial, sans-serif; color: #333;">
             <h2 style="color:#d0a19b;">Hello ${name},</h2>
-            <p>Thank you for registering at <strong>ZJ CRAFTHUB</strong>!</p>
+            <p>Thank you for registering at <strong>ZJ CRAFTSHUB</strong>!</p>
             <p>Your one-time verification code is:</p>
             <h1 style="letter-spacing: 5px; color:#d0a19b;">${otpCode}</h1>
             <p>This code is valid for <b>5 minutes</b>.</p>
             <p style="margin-top:20px; font-size:14px; color:#555;">
               If you did not request this code, please ignore this email.
             </p>      
-            <p style="margin-top:20px;">— ❤️ The ZJ CRAFTHUB Team</p>
+            <p style="margin-top:20px;">— ❤️ The ZJ CRAFTSHUB Team</p>
           </div>
         `,
       });
@@ -222,7 +222,7 @@ export const forgotPassword = async (req, res) => {
 
     await sendMail({
       to: email,
-      subject: "Password Reset OTP - ZJ CRAFTHUB",
+      subject: "Password Reset OTP - ZJ CRAFTSHUB",
       html: `
         <h2>Password Reset Request</h2>
         <p>Your OTP for resetting password is:</p>

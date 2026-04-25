@@ -174,12 +174,12 @@ export const createOrder = async (req, res) => {
       </p>
 
       <p style="margin-top: 20px;">
-        We truly appreciate your trust in <strong>ZJ CRAFTHUB</strong>. Our team is preparing your order with love and care.
+        We truly appreciate your trust in <strong>ZJ CRAFTSHUB</strong>. Our team is preparing your order with love and care.
         You'll receive another email once your package is shipped. 💌
       </p>
 
       <p style="color: #d0a19b; font-weight: bold; margin-top: 30px;">
-        — ❤️ The ZJ CRAFTHUB Team
+        — ❤️ The ZJ CRAFTSHUB Team
       </p>
     </div>
   `;
@@ -351,10 +351,10 @@ export const updateOrderStatus = async (req, res) => {
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
 
-        <p>We’ll keep you updated as your order moves through the next stages. Thank you for choosing <strong>ZJ CRAFTHUB</strong> — your support means the world to us!</p>
+        <p>We’ll keep you updated as your order moves through the next stages. Thank you for choosing <strong>ZJ CRAFTSHUB</strong> — your support means the world to us!</p>
 
         <p style="color: #d18479; font-weight: bold; text-align: center; margin-top: 25px;">
-          — ❤️ The ZJ CRAFTHUB Team
+          — ❤️ The ZJ CRAFTSHUB Team
         </p>
 
       </div>
